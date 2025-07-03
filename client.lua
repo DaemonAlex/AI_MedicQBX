@@ -7,19 +7,7 @@ AddEventHandler('custom_aimedic:revivePlayer', function(playerCoords)
     isBeingRevived = true
 
     local playerPed = PlayerPedId()
-    local isDowned = false
-
-    if Utils.QBCore then
-        local QBCore = Utils.QBCore
-        local Player = QBCore.Functions.GetPlayerData()
-        if Player and (Player.metadata['isdead'] or Player.metadata['inlaststand']) then
-            isDowned = true
-        end
-    else
-        if IsEntityDead(playerPed) then
-            isDowned = true
-        end
-    end
+    local isDowned = Utils.IsPlayerDead()
 
     if not isDowned then
         Utils.NotifyClient('You are not injured enough to call EMS.', 'error')
@@ -107,7 +95,16 @@ AddEventHandler('custom_aimedic:revivePlayer', function(playerCoords)
     TriggerServerEvent('custom_aimedic:revivePlayer', GetPlayerServerId(PlayerId()))
 
     Wait(2000)
-    if IsEntityDead(PlayerPedId()) then
+    
+    -- Enhanced fallback revival check
+    local playerStillDead = false
+    if Utils.Framework == 'qbox' or Utils.Framework == 'qbcore' then
+        playerStillDead = Utils.IsPlayerDead()
+    else
+        playerStillDead = IsEntityDead(PlayerPedId())
+    end
+    
+    if playerStillDead then
         local ped = PlayerPedId()
         local coords = GetEntityCoords(ped)
         NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, GetEntityHeading(ped), true, false)
@@ -144,42 +141,4 @@ AddEventHandler('custom_aimedic:standaloneRevive', function()
     local playerPed = PlayerPedId()
     local coords = GetEntityCoords(playerPed)
     NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, GetEntityHeading(playerPed), true, false)
-    SetEntityHealth(playerPed, GetEntityMaxHealth(playerPed))
-    ClearPedTasks(playerPed)
-    Utils.NotifyClient('You have been revived by AI EMS.', 'success')
-end)
-
-function DrawText3D(x, y, z, text)
-    local onScreen, _x, _y = World3dToScreen2d(x, y, z)
-    if not onScreen then return end
-    SetTextScale(0.35, 0.35)
-    SetTextFont(4)
-    SetTextProportional(1)
-    SetTextColour(255, 255, 255, 215)
-    SetTextCentre(true)
-    SetTextEntry("STRING")
-    AddTextComponentString(text)
-    DrawText(_x, _y)
-end
-
-function GetNearestHospital(pos)
-    local closest, dist
-    for _, hospital in pairs(Config.Hospitals) do
-        if hospital and type(hospital) == 'vector3' then
-            local d = #(pos - hospital)
-            if not dist or d < dist then
-                closest, dist = hospital, d
-            end
-        end
-    end
-    return closest or Config.Hospitals.default
-end
-
-function WeaponToName(hash)
-    for name, value in pairs(_G) do
-        if type(value) == 'number' and value == hash and name:match("^WEAPON_") then
-            return name:gsub("WEAPON_", ""):gsub("_", " "):lower()
-        end
-    end
-    return "unknown"
-end
+    SetEntityHealth
