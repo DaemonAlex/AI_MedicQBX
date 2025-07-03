@@ -108,7 +108,45 @@ AddEventHandler('custom_aimedic:revivePlayer', function(playerCoords)
         local ped = PlayerPedId()
         local coords = GetEntityCoords(ped)
         NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, GetEntityHeading(ped), true, false)
-        SetEntityHealth(ped, GetEntityMaxHealth(ped))
+        SetEntityHealth(playerPed, GetEntityMaxHealth(playerPed))
+    ClearPedTasks(playerPed)
+    Utils.NotifyClient('You have been revived by AI EMS.', 'success')
+end)
+
+function DrawText3D(x, y, z, text)
+    local onScreen, _x, _y = World3dToScreen2d(x, y, z)
+    if not onScreen then return end
+    SetTextScale(0.35, 0.35)
+    SetTextFont(4)
+    SetTextProportional(1)
+    SetTextColour(255, 255, 255, 215)
+    SetTextCentre(true)
+    SetTextEntry("STRING")
+    AddTextComponentString(text)
+    DrawText(_x, _y)
+end
+
+function GetNearestHospital(pos)
+    local closest, dist
+    for _, hospital in pairs(Config.Hospitals) do
+        if hospital and type(hospital) == 'vector3' then
+            local d = #(pos - hospital)
+            if not dist or d < dist then
+                closest, dist = hospital, d
+            end
+        end
+    end
+    return closest or Config.Hospitals.default
+end
+
+function WeaponToName(hash)
+    for name, value in pairs(_G) do
+        if type(value) == 'number' and value == hash and name:match("^WEAPON_") then
+            return name:gsub("WEAPON_", ""):gsub("_", " "):lower()
+        end
+    end
+    return "unknown"
+end(ped, GetEntityMaxHealth(ped))
         ClearPedTasksImmediately(ped)
         Utils.NotifyClient('You have been revived by AI EMS (fallback).', 'success')
     end
