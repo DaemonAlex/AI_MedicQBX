@@ -2,7 +2,7 @@ fx_version 'cerulean'
 game 'gta5'
 lua54 'yes'
 
-author 'Crazy Eyes Studio'
+author 'written by Crazy Eyes Studio & updated by DaemonScripts'
 description 'Advanced AI Medic Script - QBCore & Standalone Compatible'
 version '1.0.0'
 
