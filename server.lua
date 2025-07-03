@@ -1,17 +1,9 @@
 RegisterCommand('callmedic', function(source)
     print('[AI Medic] callmedic command triggered by source: ' .. source)
-    local onlineEMS = 0
-    if Utils.QBCore then
-        for _, id in pairs(Utils.QBCore.Functions.GetPlayers()) do
-            local ply = Utils.QBCore.Functions.GetPlayer(id)
-            if ply and ply.PlayerData.job.name == "ambulance" then
-                onlineEMS = onlineEMS + 1
-            end
-        end
-        print('[AI Medic] Online EMS count: ' .. onlineEMS)
-    end
-
-    if onlineEMS > Config.MaxEMSOnline then
+    
+    local onlineEMS = Utils.GetOnlineEMSCount()
+    
+    if onlineEMS >= Config.MaxEMSOnline then
         Utils.Notify(source, "EMS are available, please call them instead.", "error")
         return
     end
@@ -23,6 +15,7 @@ RegisterCommand('callmedic', function(source)
         Utils.Notify(source, "Error: Could not get your location.", "error")
         return
     end
+    
     print('[AI Medic] Triggering revivePlayer for source: ' .. source .. ' at coords: ' .. tostring(coords))
     TriggerClientEvent('custom_aimedic:revivePlayer', source, coords)
 end, false)
@@ -31,6 +24,7 @@ RegisterNetEvent('custom_aimedic:chargePlayer')
 AddEventHandler('custom_aimedic:chargePlayer', function(target)
     local src = target or source
     print('[AI Medic] Charging player: ' .. src)
+    
     local Player = Utils.GetPlayerFramework(src)
     if Player then
         if Utils.RemoveMoney(Player, Config.Fee) then
@@ -44,15 +38,25 @@ AddEventHandler('custom_aimedic:chargePlayer', function(target)
     end
 end)
 
--- Custom revive event for standalone mode
+-- Custom revive event with framework compatibility
 RegisterNetEvent('custom_aimedic:revivePlayer')
 AddEventHandler('custom_aimedic:revivePlayer', function(target)
-    print('[AI Medic] Revive requested for target: ' .. target)
-    if Utils.QBCore then
-        -- Use QBCore's revive event (adjust based on your QBCore version)
-        TriggerClientEvent('hospital:client:Revive', target) -- Common QBCore revive event
-    else
-        -- Standalone revive logic
-        TriggerClientEvent('custom_aimedic:standaloneRevive', target)
-    end
+    local src = target or source
+    Utils.RevivePlayer(src)
 end)
+
+-- Debug command for admins
+RegisterCommand('debugmedic', function(source, args)
+    if source == 0 then -- Console only
+        print('[AI Medic Debug] Framework: ' .. Utils.Framework)
+        print('[AI Medic Debug] Online EMS: ' .. Utils.GetOnlineEMSCount())
+        print('[AI Medic Debug] Max EMS Online: ' .. Config.MaxEMSOnline)
+        
+        if Utils.Framework == 'qbox' then
+            print('[AI Medic Debug] QBox Core State: ' .. GetResourceState('qbx_core'))
+            print('[AI Medic Debug] QBox Medical State: ' .. GetResourceState('qbx_medical'))
+        elseif Utils.Framework == 'qbcore' then
+            print('[AI Medic Debug] QBCore State: ' .. GetResourceState('qb-core'))
+        end
+    end
+end, true)
