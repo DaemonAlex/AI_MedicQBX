@@ -3,7 +3,7 @@ game 'gta5'
 lua54 'yes'
 
 author 'written by Crazy Eyes Studio & updated by DaemonScripts'
-description 'Advanced AI Medic Script - QBCore & Standalone Compatible'
+description 'Advanced AI Medic Script - QBX, QBCore & Standalone Compatible'
 version '1.0.0'
 
 client_scripts {
